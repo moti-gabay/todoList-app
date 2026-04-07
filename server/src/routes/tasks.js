@@ -2,13 +2,18 @@ const express = require("express");
 const { v4: uuidv4 } = require("uuid");
 const { readTasks, writeTasks } = require("../utils/fileUtils");
 const { validateTaskCreate, validateTaskUpdate } = require("../middleware/validateTask");
+const authGuard = require("../middleware/authGuard");
 
 const router = express.Router();
 
-// GET /api/tasks — retrieve all tasks
+// All task routes require a valid JWT
+router.use(authGuard);
+
+// GET /api/tasks — retrieve all tasks for the logged-in user
 router.get("/", (req, res) => {
   const tasks = readTasks();
-  res.json(tasks);
+  const userTasks = tasks.filter((task) => task.userId === req.userId);
+  res.json(userTasks);
 });
 
 // POST /api/tasks — create a new task
@@ -18,6 +23,7 @@ router.post("/", validateTaskCreate, (req, res) => {
 
   const newTask = {
     id: uuidv4(),
+    userId: req.userId,
     title,
     isCompleted: false,
     createdAt: new Date().toISOString(),
@@ -29,18 +35,17 @@ router.post("/", validateTaskCreate, (req, res) => {
   res.status(201).json(newTask);
 });
 
-// PATCH /api/tasks/:id — update a task (title or isCompleted)
+// PATCH /api/tasks/:id — update a task
 router.patch("/:id", validateTaskUpdate, (req, res) => {
   const { id } = req.params;
   const tasks = readTasks();
-  const taskIndex = tasks.findIndex((task) => task.id === id);
+  const taskIndex = tasks.findIndex((task) => task.id === id && task.userId === req.userId);
 
   if (taskIndex === -1) {
     return res.status(404).json({ error: "Task not found." });
   }
 
   const { title, isCompleted } = req.body;
-
   if (title !== undefined) tasks[taskIndex].title = title;
   if (isCompleted !== undefined) tasks[taskIndex].isCompleted = isCompleted;
 
@@ -52,7 +57,7 @@ router.patch("/:id", validateTaskUpdate, (req, res) => {
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
   const tasks = readTasks();
-  const taskIndex = tasks.findIndex((task) => task.id === id);
+  const taskIndex = tasks.findIndex((task) => task.id === id && task.userId === req.userId);
 
   if (taskIndex === -1) {
     return res.status(404).json({ error: "Task not found." });

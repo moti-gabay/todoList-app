@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const tasksRouter = require("./routes/tasks");
+const authRouter = require("./routes/auth");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -8,6 +9,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+app.use("/api/auth", authRouter);
 app.use("/api/tasks", tasksRouter);
 
 // 404 handler for unknown routes

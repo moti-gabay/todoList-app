@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(npx --yes create-vite@latest client --template react)"
+      "Bash(npx --yes create-vite@latest client --template react)",
+      "Bash(npm run:*)"
     ]
   }
 }
