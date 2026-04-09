@@ -1,5 +1,7 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const connectDB = require("./config/db");
 const tasksRouter = require("./routes/tasks");
 const authRouter = require("./routes/auth");
 
@@ -12,17 +14,20 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/tasks", tasksRouter);
 
-// 404 handler for unknown routes
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({ error: "Route not found." });
 });
 
-// Global error handler
-app.use((err, req, res, next) => {
+app.use((err, _req, res, _next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Internal server error." });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  })
+  .catch((err) => {
+    console.error("Failed to connect to MongoDB:", err.message);
+    process.exit(1);
+  });

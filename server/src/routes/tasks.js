@@ -1,72 +1,46 @@
 const express = require("express");
-const { v4: uuidv4 } = require("uuid");
-const { readTasks, writeTasks } = require("../utils/fileUtils");
+const Task = require("../models/Task");
 const { validateTaskCreate, validateTaskUpdate } = require("../middleware/validateTask");
 const authGuard = require("../middleware/authGuard");
 
 const router = express.Router();
 
-// All task routes require a valid JWT
 router.use(authGuard);
 
-// GET /api/tasks — retrieve all tasks for the logged-in user
-router.get("/", (req, res) => {
-  const tasks = readTasks();
-  const userTasks = tasks.filter((task) => task.userId === req.userId);
-  res.json(userTasks);
+// GET /api/tasks
+router.get("/", async (req, res) => {
+  const tasks = await Task.find({ userId: req.userId }).sort({ createdAt: -1 });
+  res.json(tasks);
 });
 
-// POST /api/tasks — create a new task
-router.post("/", validateTaskCreate, (req, res) => {
-  const { title } = req.body;
-  const tasks = readTasks();
-
-  const newTask = {
-    id: uuidv4(),
-    userId: req.userId,
-    title,
-    isCompleted: false,
-    createdAt: new Date().toISOString(),
-  };
-
-  tasks.push(newTask);
-  writeTasks(tasks);
-
-  res.status(201).json(newTask);
+// POST /api/tasks
+router.post("/", validateTaskCreate, async (req, res) => {
+  const task = await Task.create({ userId: req.userId, title: req.body.title });
+  res.status(201).json(task);
 });
 
-// PATCH /api/tasks/:id — update a task
-router.patch("/:id", validateTaskUpdate, (req, res) => {
-  const { id } = req.params;
-  const tasks = readTasks();
-  const taskIndex = tasks.findIndex((task) => task.id === id && task.userId === req.userId);
-
-  if (taskIndex === -1) {
-    return res.status(404).json({ error: "Task not found." });
-  }
-
+// PATCH /api/tasks/:id
+router.patch("/:id", validateTaskUpdate, async (req, res) => {
   const { title, isCompleted } = req.body;
-  if (title !== undefined) tasks[taskIndex].title = title;
-  if (isCompleted !== undefined) tasks[taskIndex].isCompleted = isCompleted;
+  const updates = {};
+  if (title !== undefined) updates.title = title;
+  if (isCompleted !== undefined) updates.isCompleted = isCompleted;
 
-  writeTasks(tasks);
-  res.json(tasks[taskIndex]);
+  const task = await Task.findOneAndUpdate(
+    { _id: req.params.id, userId: req.userId },
+    updates,
+    { new: true }
+  );
+
+  if (!task) return res.status(404).json({ error: "Task not found." });
+  res.json(task);
 });
 
-// DELETE /api/tasks/:id — delete a task
-router.delete("/:id", (req, res) => {
-  const { id } = req.params;
-  const tasks = readTasks();
-  const taskIndex = tasks.findIndex((task) => task.id === id && task.userId === req.userId);
-
-  if (taskIndex === -1) {
-    return res.status(404).json({ error: "Task not found." });
-  }
-
-  const [deletedTask] = tasks.splice(taskIndex, 1);
-  writeTasks(tasks);
-
-  res.json(deletedTask);
+// DELETE /api/tasks/:id
+router.delete("/:id", async (req, res) => {
+  const task = await Task.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+  if (!task) return res.status(404).json({ error: "Task not found." });
+  res.json(task);
 });
 
 module.exports = router;
