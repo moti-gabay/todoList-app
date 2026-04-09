@@ -3,8 +3,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const { readUsers, writeUsers } = require("../utils/fileUtils");
+require('dotenv').config()
 
 const router = express.Router();
+
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_production";
 const TOKEN_EXPIRY = "7d";
 
