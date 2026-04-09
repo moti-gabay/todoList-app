@@ -28,7 +28,7 @@ export default function TaskList({ tasks, isLoading, activeFilter, onToggle, onD
     <ul className="flex flex-col gap-3">
       {tasks.map((task) => (
         <TaskItem
-          key={task.id}
+          key={task._id}
           task={task}
           onToggle={onToggle}
           onDelete={onDelete}
