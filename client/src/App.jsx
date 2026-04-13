@@ -38,12 +38,12 @@ export default function App() {
 
   async function handleToggleTask(id, isCompleted) {
     const updatedTask = await toggleTask(id, isCompleted);
-    setTasks((prev) => prev.map((task) => (task.id === id ? updatedTask : task)));
+    setTasks((prev) => prev.map((task) => (task._id === id ? updatedTask : task)));
   }
 
   async function handleDeleteTask(id) {
     await deleteTask(id);
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    setTasks((prev) => prev.filter((task) => task._id !== id));
   }
 
   if (!user) return <AuthForm />;
