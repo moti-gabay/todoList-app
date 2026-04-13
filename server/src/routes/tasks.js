@@ -29,7 +29,7 @@ router.patch("/:id", validateTaskUpdate, async (req, res) => {
   const task = await Task.findOneAndUpdate(
     { _id: req.params.id, userId: req.userId },
     updates,
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (!task) return res.status(404).json({ error: "Task not found." });
