@@ -1,22 +1,17 @@
-# Stage 1 — Build the React app
-FROM node:22-alpine AS builder
+# ... (חלק ה-builder נשאר אותו דבר)
 
-WORKDIR /app
-
+FROM nginx:alpine
 COPY package*.json ./
 RUN npm install
 
-COPY . .
+# מחיקת הגדרות ברירת המחדל של Nginx כדי למנוע התנגשויות
+RUN rm /etc/nginx/conf.d/default.conf
 
-# When using nginx proxy, /api calls don't need an absolute URL
-RUN npm run build
-
-# Stage 2 — Serve with nginx
-FROM nginx:alpine
-
-COPY --from=builder /app/dist /usr/share/nginx/html
+# העתקת הקונפיגורציה שלך
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# העתקת קבצי ה-Build
+COPY --from=builder /app/dist /usr/share/nginx/html
 
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
